@@ -624,6 +624,7 @@
 
       .topbar,
       .main,
+      .app-shell,
       .toast,
       dialog {
         display: none !important;
@@ -633,14 +634,28 @@
         display: block;
       }
 
+      html,
+      body {
+        width: 8.5in;
+      }
+
       .print-page {
         width: 8.5in;
-        height: 11in;
+        height: 10.2in;
         page-break-after: always;
+        break-after: page;
+        page-break-inside: avoid;
+        break-inside: avoid-page;
         position: relative;
+        overflow: hidden;
         background: white;
         color: black;
         font-family: "Times New Roman", Times, serif;
+      }
+
+      .print-page:last-child {
+        page-break-after: auto;
+        break-after: auto;
       }
 
       .sheet {
@@ -650,6 +665,8 @@
         padding: 0.18in;
         margin: 0.25in auto 0 auto;
         position: relative;
+        page-break-inside: avoid;
+        break-inside: avoid-page;
       }
 
       .logo {
@@ -702,6 +719,15 @@
         border-collapse: collapse;
         table-layout: fixed;
         font-size: 9px;
+        page-break-inside: avoid;
+        break-inside: avoid-page;
+      }
+
+      .print-table thead,
+      .print-table tbody,
+      .print-table tr {
+        page-break-inside: avoid;
+        break-inside: avoid-page;
       }
 
       .print-table th,
@@ -779,6 +805,19 @@
         left: 0.18in;
         bottom: 0.08in;
         font-size: 7px;
+      }
+    }
+
+    @supports (-webkit-touch-callout: none) {
+      @media print {
+        .print-page {
+          height: 9.25in;
+        }
+
+        .sheet {
+          margin-top: 0.05in;
+          zoom: 0.86;
+        }
       }
     }
   </style>
