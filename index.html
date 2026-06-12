@@ -681,12 +681,6 @@
       <section class="panel" aria-labelledby="entryPanelTitle">
         <div class="panel-header">
           <h2 class="panel-title" id="entryPanelTitle">Add Entry</h2>
-          <button class="btn ghost icon" type="button" id="useNowButton" title="Use current time" aria-label="Use current time">
-            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"></circle>
-            </svg>
-          </button>
         </div>
         <div class="panel-body">
           <div class="tabs" role="tablist" aria-label="Entry mode">
@@ -702,16 +696,8 @@
               </label>
 
               <label>
-                Entry Type
-                <select id="typeInput" name="type" required>
-                  <option value="Station Check">Station Check</option>
-                  <option value="Train Ride">Train Ride</option>
-                  <option value="Briefing">Briefing</option>
-                  <option value="Reports">Reports</option>
-                  <option value="End of Shift">End of Shift</option>
-                  <option value="Enforcement">Enforcement</option>
-                  <option value="Other">Other</option>
-                </select>
+                Code
+                <select id="codeInput" name="code"></select>
               </label>
 
               <label>
@@ -719,28 +705,9 @@
                 <select id="sectorInput" name="sector"></select>
               </label>
 
-              <label>
+              <label class="wide">
                 Train / Station
                 <select id="stationInput" name="station"></select>
-              </label>
-
-              <label>
-                Code
-                <select id="codeInput" name="code"></select>
-              </label>
-
-              <label>
-                Enforcement Action
-                <select id="actionInput" name="action">
-                  <option value="">None</option>
-                  <option value="Passenger Contacted">Passenger Contacted</option>
-                  <option value="Fare Non-Payer">Fare Non-Payer</option>
-                  <option value="Citation">Citation</option>
-                  <option value="Verbal Warning">Verbal Warning</option>
-                  <option value="Removed from Train/Station">Removed from Train/Station</option>
-                  <option value="Assisted Passenger">Assisted Passenger</option>
-                  <option value="Other">Other</option>
-                </select>
               </label>
 
               <label id="customStationLabel" class="wide" hidden>
@@ -751,11 +718,6 @@
               <label id="customCodeLabel" class="wide" hidden>
                 Custom Code
                 <input id="customCodeInput" name="customCode" autocomplete="off" placeholder="Code">
-              </label>
-
-              <label class="wide">
-                Notes
-                <textarea id="notesInput" name="notes" placeholder="Optional notes"></textarea>
               </label>
             </div>
 
@@ -807,16 +769,16 @@
               <span class="metric-label">Entries</span>
             </div>
             <div class="metric">
-              <span class="metric-value" id="contactCount">0</span>
-              <span class="metric-label">Contacts</span>
+              <span class="metric-value" id="fareCheckCount">0</span>
+              <span class="metric-label">Fare Checks</span>
             </div>
             <div class="metric">
-              <span class="metric-value" id="nonPayerCount">0</span>
-              <span class="metric-label">Non-Payers</span>
+              <span class="metric-value" id="stationCheckCount">0</span>
+              <span class="metric-label">Station Checks</span>
             </div>
             <div class="metric">
-              <span class="metric-value" id="citationCount">0</span>
-              <span class="metric-label">Citations</span>
+              <span class="metric-value" id="travelCount">0</span>
+              <span class="metric-label">Travel</span>
             </div>
           </div>
 
@@ -832,10 +794,9 @@
                   <th style="width: 68px;">Time</th>
                   <th style="width: 110px;">Location</th>
                   <th style="width: 112px;">Train / Station</th>
-                  <th style="width: 118px;">Entry Type</th>
                   <th style="width: 82px;">Code</th>
+                  <th style="width: 118px;">Entry Type</th>
                   <th>Notes</th>
-                  <th style="width: 146px;">Enforcement</th>
                   <th style="width: 96px;" class="center">Edit</th>
                 </tr>
               </thead>
@@ -915,7 +876,7 @@
     const TYPE_FROM_CODE = {
       "11-53": "Station Check",
       "TR": "Train Ride",
-      "10-76": "Train Ride",
+      "10-76": "Travel",
       "10-6": "Briefing",
       "10-17": "Reports",
       "10-42": "End of Shift"
@@ -929,25 +890,22 @@
       quickFields: document.getElementById("quickFields"),
       entryForm: document.getElementById("entryForm"),
       timeInput: document.getElementById("timeInput"),
-      typeInput: document.getElementById("typeInput"),
       sectorInput: document.getElementById("sectorInput"),
       stationInput: document.getElementById("stationInput"),
       codeInput: document.getElementById("codeInput"),
-      actionInput: document.getElementById("actionInput"),
       customStationLabel: document.getElementById("customStationLabel"),
       customStationInput: document.getElementById("customStationInput"),
       customCodeLabel: document.getElementById("customCodeLabel"),
       customCodeInput: document.getElementById("customCodeInput"),
-      notesInput: document.getElementById("notesInput"),
       quickInput: document.getElementById("quickInput"),
       quickSaveButton: document.getElementById("quickSaveButton"),
       saveButton: document.getElementById("saveButton"),
       resetFormButton: document.getElementById("resetFormButton"),
       deleteLastButton: document.getElementById("deleteLastButton"),
       entryCount: document.getElementById("entryCount"),
-      contactCount: document.getElementById("contactCount"),
-      nonPayerCount: document.getElementById("nonPayerCount"),
-      citationCount: document.getElementById("citationCount"),
+      fareCheckCount: document.getElementById("fareCheckCount"),
+      stationCheckCount: document.getElementById("stationCheckCount"),
+      travelCount: document.getElementById("travelCount"),
       entryTableBody: document.getElementById("entryTableBody"),
       emptyState: document.getElementById("emptyState"),
       tableWrap: document.getElementById("tableWrap"),
@@ -955,7 +913,6 @@
       pdfButton: document.getElementById("pdfButton"),
       csvButton: document.getElementById("csvButton"),
       clearButton: document.getElementById("clearButton"),
-      useNowButton: document.getElementById("useNowButton"),
       headerDialog: document.getElementById("headerDialog"),
       headerForm: document.getElementById("headerForm"),
       closeHeaderButton: document.getElementById("closeHeaderButton"),
@@ -995,12 +952,6 @@
       elements.sectorInput.addEventListener("change", populateStationPicker);
       elements.stationInput.addEventListener("change", updateCustomVisibility);
       elements.codeInput.addEventListener("change", updateCustomVisibility);
-      elements.codeInput.addEventListener("change", maybeApplyCodeDefaults);
-      elements.typeInput.addEventListener("change", maybeApplyTypeDefaults);
-      elements.useNowButton.addEventListener("click", () => {
-        elements.timeInput.value = formatTimeHHMM(new Date());
-        showToast("Current time added.");
-      });
       elements.resetFormButton.addEventListener("click", resetEntryForm);
       elements.deleteLastButton.addEventListener("click", deleteLastEntry);
       elements.clearButton.addEventListener("click", clearEntries);
@@ -1024,7 +975,7 @@
       if (quick) {
         elements.quickInput.focus();
       } else {
-        elements.timeInput.focus();
+        elements.codeInput.focus();
       }
     }
 
@@ -1055,7 +1006,6 @@
       for (const code of CODE_PRESETS) {
         elements.codeInput.append(new Option(code, code));
       }
-      maybeApplyCodeDefaults();
       updateCustomVisibility();
     }
 
@@ -1068,44 +1018,20 @@
       elements.customCodeInput.required = customCode;
     }
 
-    function maybeApplyCodeDefaults() {
-      const code = normalizeCode(getSelectedCode());
-      if (TYPE_FROM_CODE[code]) {
-        elements.typeInput.value = TYPE_FROM_CODE[code];
-      }
-      const defaultNote = defaultRemarkForCode(code);
-      if (defaultNote && !elements.notesInput.value.trim()) {
-        elements.notesInput.value = defaultNote;
-      }
-    }
-
-    function maybeApplyTypeDefaults() {
-      const typeToCode = {
-        "Station Check": "11-53",
-        "Train Ride": "TR",
-        "Briefing": "10-6",
-        "Reports": "10-17",
-        "End of Shift": "10-42"
-      };
-      const code = typeToCode[elements.typeInput.value];
-      if (code) {
-        elements.codeInput.value = code;
-        maybeApplyCodeDefaults();
-      }
-    }
-
     function handleManualSubmit(event) {
       event.preventDefault();
+      const existingEntry = editingId ? entries.find(item => item.id === editingId) : null;
+      const code = normalizeCode(getSelectedCode());
+      const time = cleanTime(elements.timeInput.value);
       const entry = {
         id: editingId || crypto.randomUUID(),
-        date: formatDateKey(new Date()),
-        time: cleanTime(elements.timeInput.value),
+        date: existingEntry?.date || formatDateKey(new Date()),
+        time,
         location: elements.sectorInput.value,
         station: getSelectedStation(),
-        type: elements.typeInput.value,
-        code: normalizeCode(getSelectedCode()),
-        notes: elements.notesInput.value.trim(),
-        action: elements.actionInput.value
+        type: typeForCode(code),
+        code,
+        notes: defaultRemarkForCode(code)
       };
 
       if (!entry.time || entry.time.length !== 4) {
@@ -1114,8 +1040,19 @@
         return;
       }
 
+      if (!entry.code) {
+        showToast("Add a code.");
+        if (elements.codeInput.value === "CUSTOM") {
+          elements.customCodeInput.focus();
+        } else {
+          elements.codeInput.focus();
+        }
+        return;
+      }
+
       if (!entry.station) {
         showToast("Add a station or train/station value.");
+        elements.customStationInput.focus();
         return;
       }
 
@@ -1127,7 +1064,7 @@
         showToast(`${entry.time} | ${entry.station} | ${entry.code} saved.`);
       }
       persistEntries();
-      resetEntryForm({ keepTime: false });
+      prepareNextEntry();
       render();
     }
 
@@ -1151,10 +1088,9 @@
         time: formatTimeHHMM(new Date()),
         location: findSectorForStation(parsed.station),
         station: parsed.station,
-        type: TYPE_FROM_CODE[code] || "Other",
+        type: typeForCode(code),
         code,
-        notes: defaultRemarkForCode(code),
-        action: ""
+        notes: defaultRemarkForCode(code)
       };
 
       entries.push(entry);
@@ -1208,13 +1144,22 @@
     function resetEntryForm(options = {}) {
       editingId = null;
       elements.entryForm.reset();
-      elements.timeInput.value = options.keepTime ? elements.timeInput.value : formatTimeHHMM(new Date());
+      elements.timeInput.value = formatTimeHHMM(new Date());
       elements.sectorInput.value = "NORTH";
       populateStationPicker();
       elements.codeInput.value = "11-53";
-      elements.typeInput.value = "Station Check";
-      elements.notesInput.value = "STATION CHECK";
       updateCustomVisibility();
+      setSaveButtonDefault();
+    }
+
+    function prepareNextEntry() {
+      editingId = null;
+      elements.timeInput.value = formatTimeHHMM(new Date());
+      updateCustomVisibility();
+      setSaveButtonDefault();
+    }
+
+    function setSaveButtonDefault() {
       elements.saveButton.innerHTML = `
         <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
@@ -1242,7 +1187,6 @@
       setMode("manual");
       editingId = id;
       elements.timeInput.value = entry.time || formatTimeHHMM(new Date());
-      elements.typeInput.value = entry.type || "Other";
       elements.sectorInput.value = Object.keys(SECTORS).includes(entry.location) ? entry.location : findSectorForStation(entry.station);
       populateStationPicker();
       if ([...elements.stationInput.options].some(option => option.value === entry.station)) {
@@ -1257,8 +1201,6 @@
         elements.codeInput.value = "CUSTOM";
         elements.customCodeInput.value = entry.code || "";
       }
-      elements.notesInput.value = entry.notes || "";
-      elements.actionInput.value = entry.action || "";
       updateCustomVisibility();
       elements.saveButton.textContent = "Update Entry";
       elements.timeInput.focus();
@@ -1301,26 +1243,27 @@
 
     function render() {
       entries.sort((a, b) => String(a.time).localeCompare(String(b.time)));
+      const fareChecks = countRemarks("FARE CHECK");
+      const stationChecks = countCodes("11-53");
       elements.entryCount.textContent = entries.length;
-      elements.contactCount.textContent = countActions("Passenger Contacted");
-      elements.nonPayerCount.textContent = countActions("Fare Non-Payer");
-      elements.citationCount.textContent = countActions("Citation");
+      elements.fareCheckCount.textContent = fareChecks;
+      elements.stationCheckCount.textContent = stationChecks;
+      elements.travelCount.textContent = countCodes("10-76");
       elements.emptyState.hidden = entries.length > 0;
       elements.tableWrap.hidden = entries.length === 0;
       elements.entryTableBody.innerHTML = entries.map(renderEntryRow).join("");
       buildPrintPages();
     }
 
-    function renderEntryRow(entry) {
+    function renderEntryRow(entry, index) {
       return `
         <tr>
           <td>${escapeHtml(entry.time)}</td>
           <td>${escapeHtml(entry.location)}</td>
           <td><strong>${escapeHtml(entry.station)}</strong></td>
-          <td>${escapeHtml(entry.type)}</td>
           <td>${escapeHtml(entry.code)}</td>
-          <td>${escapeHtml(entry.notes)}</td>
-          <td>${escapeHtml(entry.action)}</td>
+          <td>${escapeHtml(typeForCode(entry.code))}</td>
+          <td>${escapeHtml(remarkForEntry(entry, index))}</td>
           <td class="center">
             <div class="row-actions">
               <button class="btn ghost icon" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}" title="Edit entry" aria-label="Edit entry">
@@ -1338,8 +1281,12 @@
         </tr>`;
     }
 
-    function countActions(actionName) {
-      return entries.filter(entry => entry.action === actionName).length;
+    function countCodes(code) {
+      return entries.filter(entry => normalizeCode(entry.code) === code).length;
+    }
+
+    function countRemarks(remark) {
+      return entries.filter((entry, index) => remarkForEntry(entry, index) === remark).length;
     }
 
     function openHeaderDialog() {
@@ -1396,10 +1343,21 @@
         showToast("Add at least one entry before exporting CSV.");
         return;
       }
-      const columns = ["date", "time", "location", "station", "type", "code", "notes", "action"];
+      const columns = ["date", "time", "location", "station", "type", "code", "notes"];
       const csv = [
         columns.join(","),
-        ...entries.map(entry => columns.map(column => csvEscape(entry[column] || "")).join(","))
+        ...entries.map((entry, index) => {
+          const row = {
+            date: entry.date || formatDateKey(new Date()),
+            time: entry.time || "",
+            location: entry.location || "",
+            station: entry.station || "",
+            type: typeForCode(entry.code),
+            code: normalizeCode(entry.code),
+            notes: remarkForEntry(entry, index)
+          };
+          return columns.map(column => csvEscape(row[column] || "")).join(",");
+        })
       ].join("\r\n");
       downloadFile(`daily-cci-log-${formatDateKey(new Date())}.csv`, csv, "text/csv;charset=utf-8");
       showToast("CSV exported.");
@@ -1491,9 +1449,9 @@
                 ${rows}
                 <tr class="totals-row">
                   <td colspan="4" class="totals-label">Totals:</td>
-                  <td>${countActions("Passenger Contacted")}</td>
-                  <td>${countActions("Fare Non-Payer")}</td>
-                  <td>${countActions("Citation")}</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
                   <td></td>
                 </tr>
               </tbody>
@@ -1505,27 +1463,42 @@
 
     function getPrintableEntry(entry, index) {
       const code = normalizeCode(entry.code);
-      let remarks = entry.notes || "";
-      if (!remarks.trim()) {
-        remarks = defaultRemarkForCode(code);
-      }
-      if (!remarks && (code === "TR" || code === "10-76")) {
-        const nextStation = findNextDifferentStation(index);
-        remarks = nextStation ? `TO ${nextStation}` : "";
-      }
-      if (entry.action) {
-        remarks = remarks ? `${remarks} - ${entry.action}` : entry.action;
-      }
 
       return {
         time: entry.time,
         station: entry.station,
         train: code,
-        contacts: entry.action === "Passenger Contacted" ? "1" : "",
-        nonPayers: entry.action === "Fare Non-Payer" ? "1" : "",
-        citations: entry.action === "Citation" ? "1" : "",
-        remarks
+        contacts: "",
+        nonPayers: "",
+        citations: "",
+        remarks: remarkForEntry(entry, index)
       };
+    }
+
+    function defaultRemarkForCode(code) {
+      const normalized = normalizeCode(code);
+      if (normalized === "11-53") return "STATION CHECK";
+      if (normalized === "TR") return "FARE CHECK";
+      if (normalized === "10-6") return "BRIEFING";
+      if (normalized === "10-17") return "REPORTS";
+      if (normalized === "10-42") return "END OF SHIFT";
+      return "";
+    }
+
+    function defaultRemarkForEntry(code, entry, index) {
+      const normalized = normalizeCode(code);
+      if (normalized === "10-76") {
+        const nextStation = findNextDifferentStation(index);
+        return nextStation ? `TO ${nextStation}` : "";
+      }
+      return defaultRemarkForCode(normalized);
+    }
+
+    function remarkForEntry(entry, index) {
+      const code = normalizeCode(entry.code);
+      const remark = defaultRemarkForEntry(code, entry, index);
+      if (remark) return remark;
+      return "";
     }
 
     function findNextDifferentStation(index) {
@@ -1538,13 +1511,8 @@
       return "";
     }
 
-    function defaultRemarkForCode(code) {
-      const normalized = normalizeCode(code);
-      if (normalized === "11-53") return "STATION CHECK";
-      if (normalized === "10-6") return "BRIEFING";
-      if (normalized === "10-17") return "REPORTS";
-      if (normalized === "10-42") return "END OF SHIFT";
-      return "";
+    function typeForCode(code) {
+      return TYPE_FROM_CODE[normalizeCode(code)] || "Other";
     }
 
     function normalizeCode(code) {
