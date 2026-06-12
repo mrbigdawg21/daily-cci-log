@@ -819,13 +819,13 @@
               </label>
 
               <div class="field-block wide">
-                <div class="field-label">Train / Station</div>
+                <div class="field-label">Station</div>
                 <select class="button-select" id="stationInput" name="station"></select>
                 <div class="choice-grid station-choice-grid" id="stationButtonGrid" data-select-target="stationInput"></div>
               </div>
 
               <label id="customStationLabel" class="wide" hidden>
-                Custom Train / Station
+                Custom Station
                 <input id="customStationInput" name="customStation" autocomplete="off" placeholder="Station abbreviation">
               </label>
 
@@ -900,7 +900,7 @@
                   <tr>
                     <th style="width: 68px;">Time</th>
                     <th style="width: 110px;">Location</th>
-                    <th style="width: 112px;">Train / Station</th>
+                    <th style="width: 112px;">Station</th>
                     <th style="width: 82px;">Code</th>
                     <th style="width: 118px;">Entry Type</th>
                     <th>Notes</th>
@@ -990,6 +990,7 @@
     const ROWS_PER_PAGE = 20;
     const STORAGE_KEY = "daily-cci-log.entries";
     const HEADER_KEY = "daily-cci-log.header";
+    const FORM_STATE_KEY = "daily-cci-log.form-state";
 
     const SECTORS = {
       NORTH: ["SFE", "CCLI", "MDP", "WASH", "OTTC", "MLV", "FASH", "HAZ", "MVC", "RIO", "FENT", "STA", "MSD", "GRANT", "CUSTOM"],
@@ -1064,6 +1065,7 @@
       elements.timeInput.value = formatTimeHHMM(new Date());
       populateSectorPicker();
       populateCodePicker();
+      restoreFormState();
       bindEvents();
       hydrateHeaderForm();
       render();
@@ -1080,9 +1082,20 @@
           handleQuickSubmit();
         }
       });
-      elements.sectorInput.addEventListener("change", populateStationPicker);
-      elements.stationInput.addEventListener("change", updateCustomVisibility);
-      elements.codeInput.addEventListener("change", updateCustomVisibility);
+      elements.sectorInput.addEventListener("change", () => {
+        populateStationPicker();
+        saveFormState();
+      });
+      elements.stationInput.addEventListener("change", () => {
+        updateCustomVisibility();
+        saveFormState();
+      });
+      elements.codeInput.addEventListener("change", () => {
+        updateCustomVisibility();
+        saveFormState();
+      });
+      elements.customStationInput.addEventListener("input", saveFormState);
+      elements.customCodeInput.addEventListener("input", saveFormState);
       elements.stationButtonGrid.addEventListener("click", handleChoiceClick);
       elements.codeButtonGrid.addEventListener("click", handleChoiceClick);
       elements.entriesViewTab.addEventListener("click", () => setLogView("entries"));
@@ -1165,6 +1178,45 @@
       setChoiceButtonStates(elements.codeInput, elements.codeButtonGrid);
     }
 
+    function saveFormState() {
+      const state = {
+        sector: elements.sectorInput.value,
+        station: elements.stationInput.value,
+        customStation: elements.customStationInput.value.trim().toUpperCase(),
+        code: elements.codeInput.value,
+        customCode: elements.customCodeInput.value.trim().toUpperCase()
+      };
+      localStorage.setItem(FORM_STATE_KEY, JSON.stringify(state));
+    }
+
+    function restoreFormState() {
+      const state = loadJson(FORM_STATE_KEY, null);
+      if (!state) return;
+
+      if ([...elements.sectorInput.options].some(option => option.value === state.sector)) {
+        elements.sectorInput.value = state.sector;
+      }
+
+      populateStationPicker();
+
+      const stationOptions = [...elements.stationInput.options].map(option => option.value);
+      if (stationOptions.includes(state.station)) {
+        elements.stationInput.value = state.station;
+      } else if (state.customStation) {
+        elements.stationInput.value = "CUSTOM";
+        elements.customStationInput.value = state.customStation;
+      }
+
+      if ([...elements.codeInput.options].some(option => option.value === state.code)) {
+        elements.codeInput.value = state.code;
+      } else if (state.customCode) {
+        elements.codeInput.value = "CUSTOM";
+        elements.customCodeInput.value = state.customCode;
+      }
+
+      updateCustomVisibility();
+    }
+
     function handleChoiceClick(event) {
       const button = event.target.closest("button[data-choice-value]");
       if (!button) return;
@@ -1240,6 +1292,7 @@
         showToast(`${entry.time} | ${entry.station} | ${entry.code} saved.`);
       }
       persistEntries();
+      saveFormState();
       prepareNextEntry();
       render();
     }
@@ -1271,6 +1324,7 @@
 
       entries.push(entry);
       persistEntries();
+      rememberEntrySelection(entry);
       elements.quickInput.value = "";
       render();
       showToast(`${entry.time} | ${entry.station} | ${entry.code} saved.`);
@@ -1325,6 +1379,7 @@
       populateStationPicker();
       elements.codeInput.value = "11-53";
       updateCustomVisibility();
+      saveFormState();
       setSaveButtonDefault();
     }
 
@@ -1380,6 +1435,30 @@
       updateCustomVisibility();
       elements.saveButton.textContent = "Update Entry";
       elements.timeInput.focus();
+    }
+
+    function rememberEntrySelection(entry) {
+      elements.sectorInput.value = [...elements.sectorInput.options].some(option => option.value === entry.location)
+        ? entry.location
+        : findSectorForStation(entry.station);
+      populateStationPicker();
+
+      if ([...elements.stationInput.options].some(option => option.value === entry.station)) {
+        elements.stationInput.value = entry.station;
+      } else {
+        elements.stationInput.value = "CUSTOM";
+        elements.customStationInput.value = entry.station || "";
+      }
+
+      if ([...elements.codeInput.options].some(option => option.value === entry.code)) {
+        elements.codeInput.value = entry.code;
+      } else {
+        elements.codeInput.value = "CUSTOM";
+        elements.customCodeInput.value = entry.code || "";
+      }
+
+      updateCustomVisibility();
+      saveFormState();
     }
 
     function deleteEntry(id) {
