@@ -1,0 +1,1658 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily CCI Log</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1f2933;
+      --muted: #667085;
+      --line: #cfd6dd;
+      --soft: #f3f6f8;
+      --panel: #ffffff;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --accent-soft: #d9f1ee;
+      --warning: #9a3412;
+      --danger: #b42318;
+      --shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #e9eef1;
+      min-width: 320px;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      background: #0f172a;
+      color: white;
+      border-bottom: 4px solid var(--accent);
+    }
+
+    .topbar-inner {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      letter-spacing: 0;
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      font-size: 20px;
+      line-height: 1.2;
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .date-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 8px;
+      color: #e5edf0;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .main {
+      max-width: 1220px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fbfcfd;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: #edf2f4;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      min-height: 36px;
+      border-radius: 6px;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 700;
+    }
+
+    .tab[aria-selected="true"] {
+      background: #fff;
+      color: var(--accent-dark);
+      box-shadow: 0 1px 5px rgba(15, 23, 42, 0.12);
+    }
+
+    .quick-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: #344054;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid #b8c2cc;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      min-height: 40px;
+      padding: 9px 10px;
+      outline: 0;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field-grid .wide {
+      grid-column: 1 / -1;
+    }
+
+    .station-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--accent);
+      line-height: 1;
+    }
+
+    .btn:hover {
+      background: var(--accent-dark);
+    }
+
+    .btn.secondary {
+      background: #344054;
+    }
+
+    .btn.secondary:hover {
+      background: #1f2937;
+    }
+
+    .btn.ghost {
+      background: #fff;
+      color: #344054;
+      border: 1px solid #b8c2cc;
+    }
+
+    .btn.ghost:hover {
+      background: #f6f8fa;
+    }
+
+    .btn.danger {
+      background: var(--danger);
+    }
+
+    .btn.danger:hover {
+      background: #8f1d16;
+    }
+
+    .btn.icon {
+      width: 38px;
+      padding: 0;
+      flex: 0 0 auto;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      background: #f8fafb;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 70px;
+    }
+
+    .metric-value {
+      display: block;
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1.1;
+      color: #0f172a;
+    }
+
+    .metric-label {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      max-height: 56vh;
+    }
+
+    .entry-table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .entry-table th,
+    .entry-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 9px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .entry-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f5f7f9;
+      color: #344054;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .entry-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .entry-table .center {
+      text-align: center;
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .empty-state {
+      border: 1px dashed #aab5bf;
+      border-radius: 8px;
+      padding: 28px 18px;
+      text-align: center;
+      color: var(--muted);
+      background: #fbfcfd;
+    }
+
+    .empty-state strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 5px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: min(360px, calc(100vw - 36px));
+      background: #0f172a;
+      color: white;
+      border-radius: 8px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .print-root {
+      display: none;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    dialog {
+      border: 0;
+      border-radius: 8px;
+      padding: 0;
+      width: min(680px, calc(100vw - 28px));
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.35);
+    }
+
+    dialog::backdrop {
+      background: rgba(15, 23, 42, 0.44);
+    }
+
+    .dialog-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: #fbfcfd;
+    }
+
+    .dialog-body {
+      padding: 16px;
+    }
+
+    @media (max-width: 920px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .table-wrap {
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .topbar-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .main {
+        padding: 12px;
+      }
+
+      .field-grid,
+      .station-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .quick-row {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        justify-content: stretch;
+      }
+
+      .toolbar .btn,
+      .actions .btn {
+        flex: 1 1 140px;
+      }
+    }
+
+    @page {
+      size: letter;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .topbar,
+      .main,
+      .toast,
+      dialog {
+        display: none !important;
+      }
+
+      .print-root {
+        display: block;
+      }
+
+      .print-page {
+        width: 8.5in;
+        height: 11in;
+        page-break-after: always;
+        position: relative;
+        background: white;
+        color: black;
+        font-family: "Times New Roman", Times, serif;
+      }
+
+      .sheet {
+        width: 4.5in;
+        height: 9in;
+        box-sizing: border-box;
+        padding: 0.18in;
+        margin: 0.25in auto 0 auto;
+        position: relative;
+      }
+
+      .logo {
+        position: absolute;
+        right: 0.25in;
+        top: 0.12in;
+        font-size: 13px;
+        font-weight: bold;
+        font-style: italic;
+      }
+
+      .print-title {
+        text-align: center;
+        font-size: 14px;
+        font-weight: bold;
+        letter-spacing: 0.8px;
+        text-decoration: underline;
+        margin-top: 0.18in;
+        margin-bottom: 0.12in;
+      }
+
+      .print-header {
+        font-size: 10px;
+        margin-bottom: 0.08in;
+      }
+
+      .print-header-row {
+        display: flex;
+        gap: 0.06in;
+        margin-bottom: 0.035in;
+        align-items: baseline;
+      }
+
+      .print-field {
+        border-bottom: 1px solid black;
+        min-height: 12px;
+        flex: 1;
+        padding-left: 3px;
+      }
+
+      .print-small-field {
+        border-bottom: 1px solid black;
+        min-height: 12px;
+        width: 0.45in;
+        padding-left: 3px;
+      }
+
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 9px;
+      }
+
+      .print-table th,
+      .print-table td {
+        border: 1px solid black;
+        text-align: center;
+        vertical-align: middle;
+        padding: 1px;
+        overflow: hidden;
+      }
+
+      .print-table th {
+        height: 0.58in;
+        font-weight: normal;
+      }
+
+      .print-table td {
+        height: 0.285in;
+      }
+
+      .print-time {
+        width: 13%;
+      }
+
+      .print-direction {
+        width: 8%;
+      }
+
+      .print-station {
+        width: 20%;
+      }
+
+      .print-train {
+        width: 14%;
+      }
+
+      .print-smallcol {
+        width: 8%;
+      }
+
+      .print-remarks {
+        width: 21%;
+      }
+
+      .vertical {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        white-space: nowrap;
+        margin: auto;
+      }
+
+      .remarks-text {
+        text-align: left !important;
+        padding-left: 4px !important;
+        font-size: 9px;
+      }
+
+      .ew {
+        line-height: 1.05;
+        font-size: 9px;
+      }
+
+      .totals-row td {
+        height: 0.32in;
+      }
+
+      .totals-label {
+        text-align: right !important;
+        padding-right: 4px !important;
+        font-size: 10px;
+      }
+
+      .footer {
+        position: absolute;
+        left: 0.18in;
+        bottom: 0.08in;
+        font-size: 7px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="mark" aria-hidden="true">MTS</div>
+          <h1>Daily CCI Log</h1>
+        </div>
+        <div class="date-chip" id="todayLabel"></div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="panel" aria-labelledby="entryPanelTitle">
+        <div class="panel-header">
+          <h2 class="panel-title" id="entryPanelTitle">Add Entry</h2>
+          <button class="btn ghost icon" type="button" id="useNowButton" title="Use current time" aria-label="Use current time">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"></circle>
+            </svg>
+          </button>
+        </div>
+        <div class="panel-body">
+          <div class="tabs" role="tablist" aria-label="Entry mode">
+            <button class="tab" type="button" role="tab" id="manualTab" aria-selected="true">Manual</button>
+            <button class="tab" type="button" role="tab" id="quickTab" aria-selected="false">Quick</button>
+          </div>
+
+          <form id="entryForm">
+            <div id="manualFields" class="field-grid">
+              <label>
+                Time
+                <input id="timeInput" name="time" inputmode="numeric" autocomplete="off" placeholder="HHMM" maxlength="4" required>
+              </label>
+
+              <label>
+                Entry Type
+                <select id="typeInput" name="type" required>
+                  <option value="Station Check">Station Check</option>
+                  <option value="Train Ride">Train Ride</option>
+                  <option value="Briefing">Briefing</option>
+                  <option value="Reports">Reports</option>
+                  <option value="End of Shift">End of Shift</option>
+                  <option value="Enforcement">Enforcement</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+
+              <label>
+                Location
+                <select id="sectorInput" name="sector"></select>
+              </label>
+
+              <label>
+                Train / Station
+                <select id="stationInput" name="station"></select>
+              </label>
+
+              <label>
+                Code
+                <select id="codeInput" name="code"></select>
+              </label>
+
+              <label>
+                Enforcement Action
+                <select id="actionInput" name="action">
+                  <option value="">None</option>
+                  <option value="Passenger Contacted">Passenger Contacted</option>
+                  <option value="Fare Non-Payer">Fare Non-Payer</option>
+                  <option value="Citation">Citation</option>
+                  <option value="Verbal Warning">Verbal Warning</option>
+                  <option value="Removed from Train/Station">Removed from Train/Station</option>
+                  <option value="Assisted Passenger">Assisted Passenger</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+
+              <label id="customStationLabel" class="wide" hidden>
+                Custom Train / Station
+                <input id="customStationInput" name="customStation" autocomplete="off" placeholder="Station abbreviation">
+              </label>
+
+              <label id="customCodeLabel" class="wide" hidden>
+                Custom Code
+                <input id="customCodeInput" name="customCode" autocomplete="off" placeholder="Code">
+              </label>
+
+              <label class="wide">
+                Notes
+                <textarea id="notesInput" name="notes" placeholder="Optional notes"></textarea>
+              </label>
+            </div>
+
+            <div id="quickFields" hidden>
+              <div class="quick-row">
+                <label>
+                  Quick Entry
+                  <input id="quickInput" autocomplete="off" placeholder="HAZ 11-53, HAZ TRAIN, LG 10-42, or just TR">
+                </label>
+                <button class="btn secondary" type="button" id="quickSaveButton">Add</button>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn" type="submit" id="saveButton">
+                <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                  <path d="M17 21v-8H7v8M7 3v5h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                </svg>
+                Save Entry
+              </button>
+              <button class="btn ghost" type="button" id="resetFormButton">Reset</button>
+              <button class="btn ghost" type="button" id="deleteLastButton">Delete Last</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="logPanelTitle">
+        <div class="panel-header">
+          <h2 class="panel-title" id="logPanelTitle">Today's Log</h2>
+          <div class="toolbar">
+            <button class="btn ghost" type="button" id="headerButton">Header</button>
+            <button class="btn secondary" type="button" id="pdfButton">
+              <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 9V2h9l5 5v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                <path d="M14 2v6h6M6 18H4v-6h3a2 2 0 0 1 0 4H6v2Zm7-6h-3v6h3a3 3 0 0 0 0-6Zm5 0h3M18 18v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+              Export PDF
+            </button>
+            <button class="btn ghost" type="button" id="csvButton">CSV</button>
+            <button class="btn danger" type="button" id="clearButton">Clear</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="summary" aria-label="Daily totals">
+            <div class="metric">
+              <span class="metric-value" id="entryCount">0</span>
+              <span class="metric-label">Entries</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value" id="contactCount">0</span>
+              <span class="metric-label">Contacts</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value" id="nonPayerCount">0</span>
+              <span class="metric-label">Non-Payers</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value" id="citationCount">0</span>
+              <span class="metric-label">Citations</span>
+            </div>
+          </div>
+
+          <div id="emptyState" class="empty-state">
+            <strong>No entries yet.</strong>
+            Add a manual entry or use quick entry to start the log.
+          </div>
+
+          <div class="table-wrap" id="tableWrap" hidden>
+            <table class="entry-table">
+              <thead>
+                <tr>
+                  <th style="width: 68px;">Time</th>
+                  <th style="width: 110px;">Location</th>
+                  <th style="width: 112px;">Train / Station</th>
+                  <th style="width: 118px;">Entry Type</th>
+                  <th style="width: 82px;">Code</th>
+                  <th>Notes</th>
+                  <th style="width: 146px;">Enforcement</th>
+                  <th style="width: 96px;" class="center">Edit</th>
+                </tr>
+              </thead>
+              <tbody id="entryTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="headerDialog">
+    <form method="dialog" id="headerForm">
+      <div class="dialog-header">
+        <h2 class="panel-title">Printable Header</h2>
+        <button class="btn ghost icon" type="button" id="closeHeaderButton" title="Close" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="dialog-body">
+        <div class="field-grid">
+          <label>
+            CCI
+            <input id="headerCci" autocomplete="off">
+          </label>
+          <label>
+            Date
+            <input id="headerDate" autocomplete="off">
+          </label>
+          <label>
+            Day
+            <input id="headerDay" autocomplete="off">
+          </label>
+          <label>
+            Squad
+            <input id="headerSquad" autocomplete="off">
+          </label>
+          <label>
+            Call No.
+            <input id="headerCallNo" autocomplete="off">
+          </label>
+          <label>
+            Juvenile Court
+            <input id="headerJuvenileCourt" autocomplete="off">
+          </label>
+          <label class="wide">
+            Adult Court
+            <input id="headerAdultCourt" autocomplete="off">
+          </label>
+        </div>
+        <div class="actions">
+          <button class="btn" value="save" type="submit">Save Header</button>
+          <button class="btn ghost" value="cancel" type="button" id="cancelHeaderButton">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="print-root" id="printRoot" aria-hidden="true"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const ROWS_PER_PAGE = 20;
+    const STORAGE_KEY = "daily-cci-log.entries";
+    const HEADER_KEY = "daily-cci-log.header";
+
+    const SECTORS = {
+      NORTH: ["SFE", "CCLI", "MDP", "WASH", "OTTC", "MLV", "FASH", "HAZ", "MVC", "RIO", "FENT", "STA", "MSD", "GRANT", "CUSTOM"],
+      METRO: ["SFE", "AMP", "COURT", "CIVIC", "5TH", "CITY", "MKT", "IMP", "CUSTOM"],
+      EAST: ["CITY", "PARK", "12TH", "25TH", "32ND", "47TH", "EUCLID", "62ND", "MASS", "LG", "SPRING", "LA MESA", "GROSS", "AMAYA", "ELC", "ARNELE", "GIL", "70TH", "ALV", "SDSU", "GRVL", "CUSTOM"],
+      SOUTH: ["BARRIO", "HARBOR", "PAC", "8TH", "24TH", "E ST", "H ST", "PALO", "PALM", "IRIS", "BEYER", "SY", "CUSTOM"]
+    };
+
+    const CODE_PRESETS = ["11-53", "TR", "10-76", "10-6", "10-17", "10-42", "CUSTOM"];
+    const TYPE_FROM_CODE = {
+      "11-53": "Station Check",
+      "TR": "Train Ride",
+      "10-76": "Train Ride",
+      "10-6": "Briefing",
+      "10-17": "Reports",
+      "10-42": "End of Shift"
+    };
+
+    const elements = {
+      todayLabel: document.getElementById("todayLabel"),
+      manualTab: document.getElementById("manualTab"),
+      quickTab: document.getElementById("quickTab"),
+      manualFields: document.getElementById("manualFields"),
+      quickFields: document.getElementById("quickFields"),
+      entryForm: document.getElementById("entryForm"),
+      timeInput: document.getElementById("timeInput"),
+      typeInput: document.getElementById("typeInput"),
+      sectorInput: document.getElementById("sectorInput"),
+      stationInput: document.getElementById("stationInput"),
+      codeInput: document.getElementById("codeInput"),
+      actionInput: document.getElementById("actionInput"),
+      customStationLabel: document.getElementById("customStationLabel"),
+      customStationInput: document.getElementById("customStationInput"),
+      customCodeLabel: document.getElementById("customCodeLabel"),
+      customCodeInput: document.getElementById("customCodeInput"),
+      notesInput: document.getElementById("notesInput"),
+      quickInput: document.getElementById("quickInput"),
+      quickSaveButton: document.getElementById("quickSaveButton"),
+      saveButton: document.getElementById("saveButton"),
+      resetFormButton: document.getElementById("resetFormButton"),
+      deleteLastButton: document.getElementById("deleteLastButton"),
+      entryCount: document.getElementById("entryCount"),
+      contactCount: document.getElementById("contactCount"),
+      nonPayerCount: document.getElementById("nonPayerCount"),
+      citationCount: document.getElementById("citationCount"),
+      entryTableBody: document.getElementById("entryTableBody"),
+      emptyState: document.getElementById("emptyState"),
+      tableWrap: document.getElementById("tableWrap"),
+      headerButton: document.getElementById("headerButton"),
+      pdfButton: document.getElementById("pdfButton"),
+      csvButton: document.getElementById("csvButton"),
+      clearButton: document.getElementById("clearButton"),
+      useNowButton: document.getElementById("useNowButton"),
+      headerDialog: document.getElementById("headerDialog"),
+      headerForm: document.getElementById("headerForm"),
+      closeHeaderButton: document.getElementById("closeHeaderButton"),
+      cancelHeaderButton: document.getElementById("cancelHeaderButton"),
+      printRoot: document.getElementById("printRoot"),
+      toast: document.getElementById("toast")
+    };
+
+    let entries = loadJson(STORAGE_KEY, []);
+    let header = loadJson(HEADER_KEY, defaultHeader());
+    let editingId = null;
+    let toastTimer = null;
+
+    initialize();
+
+    function initialize() {
+      elements.todayLabel.textContent = formatLongDate(new Date());
+      elements.timeInput.value = formatTimeHHMM(new Date());
+      populateSectorPicker();
+      populateCodePicker();
+      bindEvents();
+      hydrateHeaderForm();
+      render();
+    }
+
+    function bindEvents() {
+      elements.manualTab.addEventListener("click", () => setMode("manual"));
+      elements.quickTab.addEventListener("click", () => setMode("quick"));
+      elements.entryForm.addEventListener("submit", handleManualSubmit);
+      elements.quickSaveButton.addEventListener("click", handleQuickSubmit);
+      elements.quickInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          handleQuickSubmit();
+        }
+      });
+      elements.sectorInput.addEventListener("change", populateStationPicker);
+      elements.stationInput.addEventListener("change", updateCustomVisibility);
+      elements.codeInput.addEventListener("change", updateCustomVisibility);
+      elements.codeInput.addEventListener("change", maybeApplyCodeDefaults);
+      elements.typeInput.addEventListener("change", maybeApplyTypeDefaults);
+      elements.useNowButton.addEventListener("click", () => {
+        elements.timeInput.value = formatTimeHHMM(new Date());
+        showToast("Current time added.");
+      });
+      elements.resetFormButton.addEventListener("click", resetEntryForm);
+      elements.deleteLastButton.addEventListener("click", deleteLastEntry);
+      elements.clearButton.addEventListener("click", clearEntries);
+      elements.csvButton.addEventListener("click", exportCsv);
+      elements.pdfButton.addEventListener("click", exportPdf);
+      elements.headerButton.addEventListener("click", openHeaderDialog);
+      elements.closeHeaderButton.addEventListener("click", closeHeaderDialog);
+      elements.cancelHeaderButton.addEventListener("click", closeHeaderDialog);
+      elements.headerForm.addEventListener("submit", saveHeader);
+      elements.entryTableBody.addEventListener("click", handleTableClick);
+      window.addEventListener("beforeprint", buildPrintPages);
+    }
+
+    function setMode(mode) {
+      const quick = mode === "quick";
+      elements.manualTab.setAttribute("aria-selected", String(!quick));
+      elements.quickTab.setAttribute("aria-selected", String(quick));
+      elements.manualFields.hidden = quick;
+      elements.quickFields.hidden = !quick;
+      elements.saveButton.hidden = quick;
+      if (quick) {
+        elements.quickInput.focus();
+      } else {
+        elements.timeInput.focus();
+      }
+    }
+
+    function populateSectorPicker() {
+      elements.sectorInput.innerHTML = "";
+      for (const sector of Object.keys(SECTORS)) {
+        elements.sectorInput.append(new Option(sector, sector));
+      }
+      elements.sectorInput.append(new Option("CUSTOM", "CUSTOM"));
+      populateStationPicker();
+    }
+
+    function populateStationPicker() {
+      const sector = elements.sectorInput.value;
+      elements.stationInput.innerHTML = "";
+      if (sector === "CUSTOM") {
+        elements.stationInput.append(new Option("CUSTOM", "CUSTOM"));
+      } else {
+        for (const station of SECTORS[sector] || []) {
+          elements.stationInput.append(new Option(station, station));
+        }
+      }
+      updateCustomVisibility();
+    }
+
+    function populateCodePicker() {
+      elements.codeInput.innerHTML = "";
+      for (const code of CODE_PRESETS) {
+        elements.codeInput.append(new Option(code, code));
+      }
+      maybeApplyCodeDefaults();
+      updateCustomVisibility();
+    }
+
+    function updateCustomVisibility() {
+      const customStation = elements.stationInput.value === "CUSTOM" || elements.sectorInput.value === "CUSTOM";
+      const customCode = elements.codeInput.value === "CUSTOM";
+      elements.customStationLabel.hidden = !customStation;
+      elements.customStationInput.required = customStation;
+      elements.customCodeLabel.hidden = !customCode;
+      elements.customCodeInput.required = customCode;
+    }
+
+    function maybeApplyCodeDefaults() {
+      const code = normalizeCode(getSelectedCode());
+      if (TYPE_FROM_CODE[code]) {
+        elements.typeInput.value = TYPE_FROM_CODE[code];
+      }
+      const defaultNote = defaultRemarkForCode(code);
+      if (defaultNote && !elements.notesInput.value.trim()) {
+        elements.notesInput.value = defaultNote;
+      }
+    }
+
+    function maybeApplyTypeDefaults() {
+      const typeToCode = {
+        "Station Check": "11-53",
+        "Train Ride": "TR",
+        "Briefing": "10-6",
+        "Reports": "10-17",
+        "End of Shift": "10-42"
+      };
+      const code = typeToCode[elements.typeInput.value];
+      if (code) {
+        elements.codeInput.value = code;
+        maybeApplyCodeDefaults();
+      }
+    }
+
+    function handleManualSubmit(event) {
+      event.preventDefault();
+      const entry = {
+        id: editingId || crypto.randomUUID(),
+        date: formatDateKey(new Date()),
+        time: cleanTime(elements.timeInput.value),
+        location: elements.sectorInput.value,
+        station: getSelectedStation(),
+        type: elements.typeInput.value,
+        code: normalizeCode(getSelectedCode()),
+        notes: elements.notesInput.value.trim(),
+        action: elements.actionInput.value
+      };
+
+      if (!entry.time || entry.time.length !== 4) {
+        showToast("Enter the time as HHMM.");
+        elements.timeInput.focus();
+        return;
+      }
+
+      if (!entry.station) {
+        showToast("Add a station or train/station value.");
+        return;
+      }
+
+      if (editingId) {
+        entries = entries.map(item => item.id === editingId ? entry : item);
+        showToast("Entry updated.");
+      } else {
+        entries.push(entry);
+        showToast(`${entry.time} | ${entry.station} | ${entry.code} saved.`);
+      }
+      persistEntries();
+      resetEntryForm({ keepTime: false });
+      render();
+    }
+
+    function handleQuickSubmit() {
+      const raw = elements.quickInput.value.trim();
+      if (!raw) {
+        elements.quickInput.focus();
+        return;
+      }
+      const parsed = parseQuickEntry(raw);
+      if (!parsed) {
+        showToast("Try: HAZ 11-53, HAZ TRAIN, LG 10-42, or just TR after a station.");
+        elements.quickInput.select();
+        return;
+      }
+
+      const code = normalizeCode(parsed.code);
+      const entry = {
+        id: crypto.randomUUID(),
+        date: formatDateKey(new Date()),
+        time: formatTimeHHMM(new Date()),
+        location: findSectorForStation(parsed.station),
+        station: parsed.station,
+        type: TYPE_FROM_CODE[code] || "Other",
+        code,
+        notes: defaultRemarkForCode(code),
+        action: ""
+      };
+
+      entries.push(entry);
+      persistEntries();
+      elements.quickInput.value = "";
+      render();
+      showToast(`${entry.time} | ${entry.station} | ${entry.code} saved.`);
+    }
+
+    function parseQuickEntry(raw) {
+      let text = raw.trim().toUpperCase().replace(/\s+/g, " ");
+      const parts = text.split(" ");
+      if (!parts.length) return null;
+
+      let last = parts[parts.length - 1];
+      if (last === "TRAIN") last = "TR";
+
+      const knownCode = last === "TR" || /^\d{2}-\d{2}$/.test(last) || /^\d{2}-\d$/.test(last);
+      if (!knownCode) return null;
+
+      let station = "";
+      if (parts.length === 1) {
+        station = getLastStation();
+      } else {
+        station = parts.slice(0, -1).join(" ").trim();
+      }
+
+      if (!station) return null;
+      return { station, code: normalizeCode(last) };
+    }
+
+    function getSelectedStation() {
+      if (elements.stationInput.value === "CUSTOM" || elements.sectorInput.value === "CUSTOM") {
+        return elements.customStationInput.value.trim().toUpperCase();
+      }
+      return elements.stationInput.value;
+    }
+
+    function getSelectedCode() {
+      if (elements.codeInput.value === "CUSTOM") {
+        return elements.customCodeInput.value.trim().toUpperCase();
+      }
+      return elements.codeInput.value;
+    }
+
+    function getLastStation() {
+      if (!entries.length) return "";
+      return entries[entries.length - 1].station || "";
+    }
+
+    function resetEntryForm(options = {}) {
+      editingId = null;
+      elements.entryForm.reset();
+      elements.timeInput.value = options.keepTime ? elements.timeInput.value : formatTimeHHMM(new Date());
+      elements.sectorInput.value = "NORTH";
+      populateStationPicker();
+      elements.codeInput.value = "11-53";
+      elements.typeInput.value = "Station Check";
+      elements.notesInput.value = "STATION CHECK";
+      updateCustomVisibility();
+      elements.saveButton.innerHTML = `
+        <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+          <path d="M17 21v-8H7v8M7 3v5h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+        </svg>
+        Save Entry`;
+    }
+
+    function handleTableClick(event) {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const id = button.dataset.id;
+      const action = button.dataset.action;
+      if (action === "edit") {
+        editEntry(id);
+      }
+      if (action === "delete") {
+        deleteEntry(id);
+      }
+    }
+
+    function editEntry(id) {
+      const entry = entries.find(item => item.id === id);
+      if (!entry) return;
+      setMode("manual");
+      editingId = id;
+      elements.timeInput.value = entry.time || formatTimeHHMM(new Date());
+      elements.typeInput.value = entry.type || "Other";
+      elements.sectorInput.value = Object.keys(SECTORS).includes(entry.location) ? entry.location : findSectorForStation(entry.station);
+      populateStationPicker();
+      if ([...elements.stationInput.options].some(option => option.value === entry.station)) {
+        elements.stationInput.value = entry.station;
+      } else {
+        elements.stationInput.value = "CUSTOM";
+        elements.customStationInput.value = entry.station || "";
+      }
+      if (CODE_PRESETS.includes(entry.code)) {
+        elements.codeInput.value = entry.code;
+      } else {
+        elements.codeInput.value = "CUSTOM";
+        elements.customCodeInput.value = entry.code || "";
+      }
+      elements.notesInput.value = entry.notes || "";
+      elements.actionInput.value = entry.action || "";
+      updateCustomVisibility();
+      elements.saveButton.textContent = "Update Entry";
+      elements.timeInput.focus();
+    }
+
+    function deleteEntry(id) {
+      const entry = entries.find(item => item.id === id);
+      if (!entry) return;
+      if (!confirm(`Delete ${entry.time} | ${entry.station} | ${entry.code}?`)) return;
+      entries = entries.filter(item => item.id !== id);
+      persistEntries();
+      render();
+      showToast("Entry deleted.");
+    }
+
+    function deleteLastEntry() {
+      if (!entries.length) {
+        showToast("There is nothing to delete.");
+        return;
+      }
+      const last = entries[entries.length - 1];
+      if (!confirm(`Delete last entry: ${last.time} | ${last.station} | ${last.code}?`)) return;
+      entries.pop();
+      persistEntries();
+      render();
+      showToast("Last entry deleted.");
+    }
+
+    function clearEntries() {
+      if (!entries.length) {
+        showToast("The log is already empty.");
+        return;
+      }
+      if (!confirm("Clear all entries for today?")) return;
+      entries = [];
+      persistEntries();
+      render();
+      showToast("Today's log was cleared.");
+    }
+
+    function render() {
+      entries.sort((a, b) => String(a.time).localeCompare(String(b.time)));
+      elements.entryCount.textContent = entries.length;
+      elements.contactCount.textContent = countActions("Passenger Contacted");
+      elements.nonPayerCount.textContent = countActions("Fare Non-Payer");
+      elements.citationCount.textContent = countActions("Citation");
+      elements.emptyState.hidden = entries.length > 0;
+      elements.tableWrap.hidden = entries.length === 0;
+      elements.entryTableBody.innerHTML = entries.map(renderEntryRow).join("");
+      buildPrintPages();
+    }
+
+    function renderEntryRow(entry) {
+      return `
+        <tr>
+          <td>${escapeHtml(entry.time)}</td>
+          <td>${escapeHtml(entry.location)}</td>
+          <td><strong>${escapeHtml(entry.station)}</strong></td>
+          <td>${escapeHtml(entry.type)}</td>
+          <td>${escapeHtml(entry.code)}</td>
+          <td>${escapeHtml(entry.notes)}</td>
+          <td>${escapeHtml(entry.action)}</td>
+          <td class="center">
+            <div class="row-actions">
+              <button class="btn ghost icon" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}" title="Edit entry" aria-label="Edit entry">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m16 3 5 5L8 21H3v-5L16 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                </svg>
+              </button>
+              <button class="btn ghost icon" type="button" data-action="delete" data-id="${escapeHtml(entry.id)}" title="Delete entry" aria-label="Delete entry">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h18M8 6V4h8v2m-9 0 1 15h8l1-15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+    }
+
+    function countActions(actionName) {
+      return entries.filter(entry => entry.action === actionName).length;
+    }
+
+    function openHeaderDialog() {
+      hydrateHeaderForm();
+      if (typeof elements.headerDialog.showModal === "function") {
+        elements.headerDialog.showModal();
+      } else {
+        showToast("Header settings are unavailable in this browser.");
+      }
+    }
+
+    function closeHeaderDialog() {
+      elements.headerDialog.close();
+    }
+
+    function hydrateHeaderForm() {
+      document.getElementById("headerCci").value = header.cci || "";
+      document.getElementById("headerDate").value = header.date || formatShortDate(new Date());
+      document.getElementById("headerDay").value = header.day || formatDayName(new Date());
+      document.getElementById("headerSquad").value = header.squad || "";
+      document.getElementById("headerCallNo").value = header.callNo || "";
+      document.getElementById("headerJuvenileCourt").value = header.juvenileCourt || "";
+      document.getElementById("headerAdultCourt").value = header.adultCourt || "";
+    }
+
+    function saveHeader(event) {
+      event.preventDefault();
+      header = {
+        cci: document.getElementById("headerCci").value.trim(),
+        date: document.getElementById("headerDate").value.trim(),
+        day: document.getElementById("headerDay").value.trim(),
+        squad: document.getElementById("headerSquad").value.trim(),
+        callNo: document.getElementById("headerCallNo").value.trim(),
+        juvenileCourt: document.getElementById("headerJuvenileCourt").value.trim(),
+        adultCourt: document.getElementById("headerAdultCourt").value.trim()
+      };
+      localStorage.setItem(HEADER_KEY, JSON.stringify(header));
+      buildPrintPages();
+      closeHeaderDialog();
+      showToast("Header saved.");
+    }
+
+    function exportPdf() {
+      if (!entries.length) {
+        showToast("Add at least one entry before exporting.");
+        return;
+      }
+      buildPrintPages();
+      window.print();
+    }
+
+    function exportCsv() {
+      if (!entries.length) {
+        showToast("Add at least one entry before exporting CSV.");
+        return;
+      }
+      const columns = ["date", "time", "location", "station", "type", "code", "notes", "action"];
+      const csv = [
+        columns.join(","),
+        ...entries.map(entry => columns.map(column => csvEscape(entry[column] || "")).join(","))
+      ].join("\r\n");
+      downloadFile(`daily-cci-log-${formatDateKey(new Date())}.csv`, csv, "text/csv;charset=utf-8");
+      showToast("CSV exported.");
+    }
+
+    function buildPrintPages() {
+      const totalPages = Math.max(1, Math.ceil(entries.length / ROWS_PER_PAGE));
+      let pages = "";
+      for (let page = 0; page < totalPages; page++) {
+        const start = page * ROWS_PER_PAGE;
+        const pageEntries = entries.slice(start, start + ROWS_PER_PAGE);
+        pages += buildPrintPage(pageEntries, start, page + 1, totalPages);
+      }
+      elements.printRoot.innerHTML = pages;
+    }
+
+    function buildPrintPage(pageEntries, startIndex, pageNum, totalPages) {
+      let rows = "";
+      for (let i = 0; i < ROWS_PER_PAGE; i++) {
+        const entry = pageEntries[i];
+        if (entry) {
+          const absoluteIndex = startIndex + i;
+          const printable = getPrintableEntry(entry, absoluteIndex);
+          rows += `
+            <tr>
+              <td>${escapeHtml(printable.time)}</td>
+              <td><div class="ew">E<br>W</div></td>
+              <td>${escapeHtml(printable.station)}</td>
+              <td>${escapeHtml(printable.train)}</td>
+              <td>${printable.contacts}</td>
+              <td>${printable.nonPayers}</td>
+              <td>${printable.citations}</td>
+              <td class="remarks-text">${escapeHtml(printable.remarks)}</td>
+            </tr>`;
+        } else {
+          rows += `
+            <tr>
+              <td></td>
+              <td><div class="ew">E<br>W</div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>`;
+        }
+      }
+
+      return `
+        <div class="print-page">
+          <div class="sheet">
+            <div class="logo">MTS</div>
+            <div class="print-title">DAILY CODE COMPLIANCE INSPECTION LOG</div>
+            <div class="print-header">
+              <div class="print-header-row">
+                <span>CCI:</span><span class="print-field">${escapeHtml(header.cci)}</span>
+                <span>Page</span><span class="print-small-field">${pageNum}</span>
+                <span>of</span><span class="print-small-field">${totalPages}</span>
+              </div>
+              <div class="print-header-row">
+                <span>Date:</span><span class="print-field">${escapeHtml(header.date)}</span>
+              </div>
+              <div class="print-header-row">
+                <span>Day:</span><span class="print-field">${escapeHtml(header.day)}</span>
+                <span>Squad:</span><span class="print-field">${escapeHtml(header.squad)}</span>
+                <span>Call No.:</span><span class="print-field">${escapeHtml(header.callNo)}</span>
+              </div>
+              <div class="print-header-row">
+                <span>Juvenile Court:</span><span class="print-field">${escapeHtml(header.juvenileCourt)}</span>
+                <span>Adult Court:</span><span class="print-field">${escapeHtml(header.adultCourt)}</span>
+              </div>
+            </div>
+
+            <table class="print-table">
+              <thead>
+                <tr>
+                  <th class="print-time">Time</th>
+                  <th class="print-direction"><div class="vertical">Direction<br>(Circle One)</div></th>
+                  <th class="print-station">Station</th>
+                  <th class="print-train">Train #<br>Car #</th>
+                  <th class="print-smallcol"><div class="vertical">Passengers<br>Contacted</div></th>
+                  <th class="print-smallcol"><div class="vertical">Fare<br>Non-Payers</div></th>
+                  <th class="print-smallcol"><div class="vertical">Citations</div></th>
+                  <th class="print-remarks"><div class="vertical">Remarks/<br>Passenger<br>Counts</div></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+                <tr class="totals-row">
+                  <td colspan="4" class="totals-label">Totals:</td>
+                  <td>${countActions("Passenger Contacted")}</td>
+                  <td>${countActions("Fare Non-Payer")}</td>
+                  <td>${countActions("Citation")}</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="footer">G:\\RC\\Forms\\Daily CCI Log.doc<br>9/2017</div>
+          </div>
+        </div>`;
+    }
+
+    function getPrintableEntry(entry, index) {
+      const code = normalizeCode(entry.code);
+      let remarks = entry.notes || "";
+      if (!remarks.trim()) {
+        remarks = defaultRemarkForCode(code);
+      }
+      if (!remarks && (code === "TR" || code === "10-76")) {
+        const nextStation = findNextDifferentStation(index);
+        remarks = nextStation ? `TO ${nextStation}` : "";
+      }
+      if (entry.action) {
+        remarks = remarks ? `${remarks} - ${entry.action}` : entry.action;
+      }
+
+      return {
+        time: entry.time,
+        station: entry.station,
+        train: code,
+        contacts: entry.action === "Passenger Contacted" ? "1" : "",
+        nonPayers: entry.action === "Fare Non-Payer" ? "1" : "",
+        citations: entry.action === "Citation" ? "1" : "",
+        remarks
+      };
+    }
+
+    function findNextDifferentStation(index) {
+      const currentStation = entries[index] && entries[index].station;
+      for (let i = index + 1; i < entries.length; i++) {
+        if (entries[i].station && entries[i].station !== currentStation) {
+          return entries[i].station;
+        }
+      }
+      return "";
+    }
+
+    function defaultRemarkForCode(code) {
+      const normalized = normalizeCode(code);
+      if (normalized === "11-53") return "STATION CHECK";
+      if (normalized === "10-6") return "BRIEFING";
+      if (normalized === "10-17") return "REPORTS";
+      if (normalized === "10-42") return "END OF SHIFT";
+      return "";
+    }
+
+    function normalizeCode(code) {
+      let value = String(code || "").trim().toUpperCase();
+      if (value === "TRAIN") value = "TR";
+      return value;
+    }
+
+    function findSectorForStation(station) {
+      const value = String(station || "").trim().toUpperCase();
+      for (const [sector, stations] of Object.entries(SECTORS)) {
+        if (stations.includes(value)) return sector;
+      }
+      return "CUSTOM";
+    }
+
+    function persistEntries() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }
+
+    function loadJson(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function defaultHeader() {
+      const today = new Date();
+      return {
+        cci: "",
+        date: formatShortDate(today),
+        day: formatDayName(today),
+        squad: "",
+        callNo: "",
+        juvenileCourt: "",
+        adultCourt: ""
+      };
+    }
+
+    function formatTimeHHMM(date) {
+      return `${pad(date.getHours())}${pad(date.getMinutes())}`;
+    }
+
+    function cleanTime(value) {
+      return String(value || "").replace(/\D/g, "").slice(0, 4);
+    }
+
+    function formatDateKey(date) {
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function formatShortDate(date) {
+      const year = String(date.getFullYear()).slice(-2);
+      return `${date.getMonth() + 1}/${date.getDate()}/${year}`;
+    }
+
+    function formatLongDate(date) {
+      return date.toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      });
+    }
+
+    function formatDayName(date) {
+      return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][date.getDay()];
+    }
+
+    function pad(num) {
+      return String(num).padStart(2, "0");
+    }
+
+    function csvEscape(value) {
+      const text = String(value).replace(/"/g, '""');
+      return /[",\r\n]/.test(text) ? `"${text}"` : text;
+    }
+
+    function downloadFile(filename, contents, mimeType) {
+      const blob = new Blob([contents], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      elements.toast.textContent = message;
+      elements.toast.classList.add("show");
+      toastTimer = setTimeout(() => elements.toast.classList.remove("show"), 2600);
+    }
+  </script>
+</body>
+</html>
