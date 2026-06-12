@@ -400,6 +400,48 @@
       font-weight: 700;
     }
 
+    .info-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+      padding: 12px;
+    }
+
+    .info-title {
+      margin: 0 0 10px 0;
+      color: #344054;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .station-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 42px;
+      align-items: flex-start;
+    }
+
+    .station-pill {
+      min-height: 34px;
+      border: 1px solid #b8c2cc;
+      border-radius: 8px;
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .station-list-empty {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 7px 0;
+    }
+
     .table-wrap {
       overflow: auto;
       border: 1px solid var(--line);
@@ -841,45 +883,51 @@
           </div>
         </div>
         <div class="panel-body">
-          <div class="summary" aria-label="Daily totals">
-            <div class="metric">
-              <span class="metric-value" id="entryCount">0</span>
-              <span class="metric-label">Entries</span>
+          <div class="tabs" role="tablist" aria-label="Log view">
+            <button class="tab" type="button" role="tab" id="entriesViewTab" aria-selected="true">Log</button>
+            <button class="tab" type="button" role="tab" id="infoViewTab" aria-selected="false">Info</button>
+          </div>
+
+          <div id="entriesView">
+            <div id="emptyState" class="empty-state">
+              <strong>No entries yet.</strong>
+              Add a manual entry or use quick entry to start the log.
             </div>
-            <div class="metric">
-              <span class="metric-value" id="fareCheckCount">0</span>
-              <span class="metric-label">Fare Checks</span>
-            </div>
-            <div class="metric">
-              <span class="metric-value" id="stationCheckCount">0</span>
-              <span class="metric-label">Station Checks</span>
-            </div>
-            <div class="metric">
-              <span class="metric-value" id="travelCount">0</span>
-              <span class="metric-label">Travel</span>
+
+            <div class="table-wrap" id="tableWrap" hidden>
+              <table class="entry-table">
+                <thead>
+                  <tr>
+                    <th style="width: 68px;">Time</th>
+                    <th style="width: 110px;">Location</th>
+                    <th style="width: 112px;">Train / Station</th>
+                    <th style="width: 82px;">Code</th>
+                    <th style="width: 118px;">Entry Type</th>
+                    <th>Notes</th>
+                    <th style="width: 96px;" class="center">Edit</th>
+                  </tr>
+                </thead>
+                <tbody id="entryTableBody"></tbody>
+              </table>
             </div>
           </div>
 
-          <div id="emptyState" class="empty-state">
-            <strong>No entries yet.</strong>
-            Add a manual entry or use quick entry to start the log.
-          </div>
+          <div id="infoView" hidden>
+            <div class="summary" aria-label="Log information">
+              <div class="metric">
+                <span class="metric-value" id="uniqueStationCount">0</span>
+                <span class="metric-label">Unique Stations</span>
+              </div>
+              <div class="metric">
+                <span class="metric-value" id="trainLogCount">0</span>
+                <span class="metric-label">Train Logs</span>
+              </div>
+            </div>
 
-          <div class="table-wrap" id="tableWrap" hidden>
-            <table class="entry-table">
-              <thead>
-                <tr>
-                  <th style="width: 68px;">Time</th>
-                  <th style="width: 110px;">Location</th>
-                  <th style="width: 112px;">Train / Station</th>
-                  <th style="width: 82px;">Code</th>
-                  <th style="width: 118px;">Entry Type</th>
-                  <th>Notes</th>
-                  <th style="width: 96px;" class="center">Edit</th>
-                </tr>
-              </thead>
-              <tbody id="entryTableBody"></tbody>
-            </table>
+            <div class="info-panel">
+              <h3 class="info-title">Stations Mentioned</h3>
+              <div class="station-list" id="uniqueStationList"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -982,10 +1030,13 @@
       saveButton: document.getElementById("saveButton"),
       resetFormButton: document.getElementById("resetFormButton"),
       deleteLastButton: document.getElementById("deleteLastButton"),
-      entryCount: document.getElementById("entryCount"),
-      fareCheckCount: document.getElementById("fareCheckCount"),
-      stationCheckCount: document.getElementById("stationCheckCount"),
-      travelCount: document.getElementById("travelCount"),
+      entriesViewTab: document.getElementById("entriesViewTab"),
+      infoViewTab: document.getElementById("infoViewTab"),
+      entriesView: document.getElementById("entriesView"),
+      infoView: document.getElementById("infoView"),
+      uniqueStationCount: document.getElementById("uniqueStationCount"),
+      trainLogCount: document.getElementById("trainLogCount"),
+      uniqueStationList: document.getElementById("uniqueStationList"),
       entryTableBody: document.getElementById("entryTableBody"),
       emptyState: document.getElementById("emptyState"),
       tableWrap: document.getElementById("tableWrap"),
@@ -1034,6 +1085,8 @@
       elements.codeInput.addEventListener("change", updateCustomVisibility);
       elements.stationButtonGrid.addEventListener("click", handleChoiceClick);
       elements.codeButtonGrid.addEventListener("click", handleChoiceClick);
+      elements.entriesViewTab.addEventListener("click", () => setLogView("entries"));
+      elements.infoViewTab.addEventListener("click", () => setLogView("info"));
       elements.resetFormButton.addEventListener("click", resetEntryForm);
       elements.deleteLastButton.addEventListener("click", deleteLastEntry);
       elements.clearButton.addEventListener("click", clearEntries);
@@ -1059,6 +1112,14 @@
       } else {
         focusSelectedChoice(elements.stationButtonGrid);
       }
+    }
+
+    function setLogView(view) {
+      const info = view === "info";
+      elements.entriesViewTab.setAttribute("aria-selected", String(!info));
+      elements.infoViewTab.setAttribute("aria-selected", String(info));
+      elements.entriesView.hidden = info;
+      elements.infoView.hidden = !info;
     }
 
     function populateSectorPicker() {
@@ -1358,16 +1419,36 @@
 
     function render() {
       entries.sort((a, b) => String(a.time).localeCompare(String(b.time)));
-      const fareChecks = countRemarks("FARE CHECK");
-      const stationChecks = countCodes("11-53");
-      elements.entryCount.textContent = entries.length;
-      elements.fareCheckCount.textContent = fareChecks;
-      elements.stationCheckCount.textContent = stationChecks;
-      elements.travelCount.textContent = countCodes("10-76");
       elements.emptyState.hidden = entries.length > 0;
       elements.tableWrap.hidden = entries.length === 0;
       elements.entryTableBody.innerHTML = entries.map(renderEntryRow).join("");
+      renderInfoStats();
       buildPrintPages();
+    }
+
+    function renderInfoStats() {
+      const uniqueStations = getUniqueStations();
+      const trainLogs = entries.filter(entry => normalizeCode(entry.code) === "TR").length;
+      elements.uniqueStationCount.textContent = uniqueStations.length;
+      elements.trainLogCount.textContent = trainLogs;
+
+      if (!uniqueStations.length) {
+        elements.uniqueStationList.innerHTML = `<span class="station-list-empty">No stations logged yet.</span>`;
+        return;
+      }
+
+      elements.uniqueStationList.innerHTML = uniqueStations
+        .map(station => `<span class="station-pill">${escapeHtml(station)}</span>`)
+        .join("");
+    }
+
+    function getUniqueStations() {
+      const seen = new Set();
+      for (const entry of entries) {
+        const station = String(entry.station || "").trim().toUpperCase();
+        if (station) seen.add(station);
+      }
+      return [...seen];
     }
 
     function renderEntryRow(entry, index) {
@@ -1394,14 +1475,6 @@
             </div>
           </td>
         </tr>`;
-    }
-
-    function countCodes(code) {
-      return entries.filter(entry => normalizeCode(entry.code) === code).length;
-    }
-
-    function countRemarks(remark) {
-      return entries.filter((entry, index) => remarkForEntry(entry, index) === remark).length;
     }
 
     function openHeaderDialog() {
