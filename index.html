@@ -25,6 +25,10 @@
       box-sizing: border-box;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     body {
       margin: 0;
       color: var(--ink);
@@ -177,9 +181,23 @@
       margin-bottom: 14px;
     }
 
-    label {
+    label,
+    .field-block {
       display: grid;
       gap: 6px;
+      color: #344054;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .field-block {
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .field-label {
       color: #344054;
       font-size: 12px;
       font-weight: 800;
@@ -220,6 +238,64 @@
 
     .field-grid .wide {
       grid-column: 1 / -1;
+    }
+
+    .button-select {
+      display: none;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .choice-grid.station-choice-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      max-height: 245px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .choice-button {
+      min-height: 46px;
+      border: 1px solid #aab5bf;
+      border-radius: 8px;
+      background: #fff;
+      color: #26323f;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 7px;
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.1;
+      text-align: center;
+      overflow-wrap: anywhere;
+      touch-action: manipulation;
+    }
+
+    .choice-button:focus-visible {
+      outline: 0;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+    }
+
+    .choice-button[aria-pressed="true"] {
+      background: var(--accent);
+      border-color: var(--accent-dark);
+      color: #fff;
+    }
+
+    .choice-button.custom-choice {
+      border-style: dashed;
+      color: var(--accent-dark);
+      background: var(--accent-soft);
+    }
+
+    .choice-button.custom-choice[aria-pressed="true"] {
+      color: #fff;
+      background: var(--accent-dark);
     }
 
     .station-grid {
@@ -696,24 +772,26 @@
               </label>
 
               <label>
-                Code
-                <select id="codeInput" name="code"></select>
-              </label>
-
-              <label>
                 Location
                 <select id="sectorInput" name="sector"></select>
               </label>
 
-              <label class="wide">
-                Train / Station
-                <select id="stationInput" name="station"></select>
-              </label>
+              <div class="field-block wide">
+                <div class="field-label">Train / Station</div>
+                <select class="button-select" id="stationInput" name="station"></select>
+                <div class="choice-grid station-choice-grid" id="stationButtonGrid" data-select-target="stationInput"></div>
+              </div>
 
               <label id="customStationLabel" class="wide" hidden>
                 Custom Train / Station
                 <input id="customStationInput" name="customStation" autocomplete="off" placeholder="Station abbreviation">
               </label>
+
+              <div class="field-block wide">
+                <div class="field-label">Code</div>
+                <select class="button-select" id="codeInput" name="code"></select>
+                <div class="choice-grid code-choice-grid" id="codeButtonGrid" data-select-target="codeInput"></div>
+              </div>
 
               <label id="customCodeLabel" class="wide" hidden>
                 Custom Code
@@ -867,8 +945,8 @@
 
     const SECTORS = {
       NORTH: ["SFE", "CCLI", "MDP", "WASH", "OTTC", "MLV", "FASH", "HAZ", "MVC", "RIO", "FENT", "STA", "MSD", "GRANT", "CUSTOM"],
-      METRO: ["SFE", "AMP", "COURT", "CIVIC", "5TH", "CITY", "MKT", "IMP", "CUSTOM"],
-      EAST: ["CITY", "PARK", "12TH", "25TH", "32ND", "47TH", "EUCLID", "62ND", "MASS", "LG", "SPRING", "LA MESA", "GROSS", "AMAYA", "ELC", "ARNELE", "GIL", "70TH", "ALV", "SDSU", "GRVL", "CUSTOM"],
+      METRO: ["IMP", "MKT", "CITY", "5TH", "CIVIC", "COURT", "AMP", "SFE", "CUSTOM"],
+      EAST: ["25TH", "32ND", "47TH", "EUC", "62ND", "MASS", "LG", "SPR", "LAM", "GROSS", "AMAYA", "ECTC", "CUSTOM"],
       SOUTH: ["BARRIO", "HARBOR", "PAC", "8TH", "24TH", "E ST", "H ST", "PALO", "PALM", "IRIS", "BEYER", "SY", "CUSTOM"]
     };
 
@@ -892,7 +970,9 @@
       timeInput: document.getElementById("timeInput"),
       sectorInput: document.getElementById("sectorInput"),
       stationInput: document.getElementById("stationInput"),
+      stationButtonGrid: document.getElementById("stationButtonGrid"),
       codeInput: document.getElementById("codeInput"),
+      codeButtonGrid: document.getElementById("codeButtonGrid"),
       customStationLabel: document.getElementById("customStationLabel"),
       customStationInput: document.getElementById("customStationInput"),
       customCodeLabel: document.getElementById("customCodeLabel"),
@@ -952,6 +1032,8 @@
       elements.sectorInput.addEventListener("change", populateStationPicker);
       elements.stationInput.addEventListener("change", updateCustomVisibility);
       elements.codeInput.addEventListener("change", updateCustomVisibility);
+      elements.stationButtonGrid.addEventListener("click", handleChoiceClick);
+      elements.codeButtonGrid.addEventListener("click", handleChoiceClick);
       elements.resetFormButton.addEventListener("click", resetEntryForm);
       elements.deleteLastButton.addEventListener("click", deleteLastEntry);
       elements.clearButton.addEventListener("click", clearEntries);
@@ -975,7 +1057,7 @@
       if (quick) {
         elements.quickInput.focus();
       } else {
-        elements.codeInput.focus();
+        focusSelectedChoice(elements.stationButtonGrid);
       }
     }
 
@@ -998,6 +1080,7 @@
           elements.stationInput.append(new Option(station, station));
         }
       }
+      renderChoiceButtons(elements.stationInput, elements.stationButtonGrid);
       updateCustomVisibility();
     }
 
@@ -1006,6 +1089,7 @@
       for (const code of CODE_PRESETS) {
         elements.codeInput.append(new Option(code, code));
       }
+      renderChoiceButtons(elements.codeInput, elements.codeButtonGrid);
       updateCustomVisibility();
     }
 
@@ -1016,6 +1100,37 @@
       elements.customStationInput.required = customStation;
       elements.customCodeLabel.hidden = !customCode;
       elements.customCodeInput.required = customCode;
+      setChoiceButtonStates(elements.stationInput, elements.stationButtonGrid);
+      setChoiceButtonStates(elements.codeInput, elements.codeButtonGrid);
+    }
+
+    function handleChoiceClick(event) {
+      const button = event.target.closest("button[data-choice-value]");
+      if (!button) return;
+      const grid = button.closest("[data-select-target]");
+      const select = elements[grid.dataset.selectTarget];
+      if (!select) return;
+      select.value = button.dataset.choiceValue;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function renderChoiceButtons(select, grid) {
+      grid.innerHTML = [...select.options].map(option => {
+        const customClass = option.value === "CUSTOM" ? " custom-choice" : "";
+        return `<button class="choice-button${customClass}" type="button" data-choice-value="${escapeHtml(option.value)}" aria-pressed="false">${escapeHtml(option.text)}</button>`;
+      }).join("");
+      setChoiceButtonStates(select, grid);
+    }
+
+    function setChoiceButtonStates(select, grid) {
+      for (const button of grid.querySelectorAll("button[data-choice-value]")) {
+        button.setAttribute("aria-pressed", String(button.dataset.choiceValue === select.value));
+      }
+    }
+
+    function focusSelectedChoice(grid) {
+      const selected = grid.querySelector('button[aria-pressed="true"]');
+      if (selected) selected.focus();
     }
 
     function handleManualSubmit(event) {
