@@ -298,6 +298,18 @@
       background: var(--accent-dark);
     }
 
+    .train-detail-row {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: 10px;
+    }
+
+    .train-detail-row label {
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 12px;
+    }
+
     .station-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -739,6 +751,27 @@
         overflow: hidden;
       }
 
+      .train-fraction {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 0.3in;
+        line-height: 1;
+        font-size: 8px;
+        font-weight: normal;
+      }
+
+      .train-fraction-top {
+        border-bottom: 1px solid black;
+        width: 100%;
+        padding: 0 2px 1px 2px;
+      }
+
+      .train-fraction-bottom {
+        padding: 1px 2px 0 2px;
+      }
+
       .print-table th {
         height: 0.58in;
         font-weight: normal;
@@ -847,7 +880,7 @@
 
           <form id="entryForm">
             <div id="manualFields" class="field-grid">
-              <label>
+              <label id="timeFieldLabel" hidden>
                 Time
                 <input id="timeInput" name="time" inputmode="numeric" autocomplete="off" placeholder="HHMM" maxlength="4" required>
               </label>
@@ -878,6 +911,20 @@
                 Custom Code
                 <input id="customCodeInput" name="customCode" autocomplete="off" placeholder="Code">
               </label>
+
+              <div class="field-block wide" id="trainDetails" hidden>
+                <div class="field-label">Train / Car #</div>
+                <div class="train-detail-row">
+                  <label>
+                    Train
+                    <input id="trainNumberInput" inputmode="numeric" autocomplete="off" placeholder="12" maxlength="2">
+                  </label>
+                  <label>
+                    Car
+                    <input id="carNumberInput" inputmode="numeric" autocomplete="off" placeholder="4035" maxlength="4">
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div id="quickFields" hidden>
@@ -1055,6 +1102,7 @@
       manualFields: document.getElementById("manualFields"),
       quickFields: document.getElementById("quickFields"),
       entryForm: document.getElementById("entryForm"),
+      timeFieldLabel: document.getElementById("timeFieldLabel"),
       timeInput: document.getElementById("timeInput"),
       sectorInput: document.getElementById("sectorInput"),
       stationInput: document.getElementById("stationInput"),
@@ -1065,6 +1113,9 @@
       customStationInput: document.getElementById("customStationInput"),
       customCodeLabel: document.getElementById("customCodeLabel"),
       customCodeInput: document.getElementById("customCodeInput"),
+      trainDetails: document.getElementById("trainDetails"),
+      trainNumberInput: document.getElementById("trainNumberInput"),
+      carNumberInput: document.getElementById("carNumberInput"),
       quickInput: document.getElementById("quickInput"),
       quickSaveButton: document.getElementById("quickSaveButton"),
       saveButton: document.getElementById("saveButton"),
@@ -1134,7 +1185,12 @@
         saveFormState();
       });
       elements.customStationInput.addEventListener("input", saveFormState);
-      elements.customCodeInput.addEventListener("input", saveFormState);
+      elements.customCodeInput.addEventListener("input", () => {
+        updateCustomVisibility();
+        saveFormState();
+      });
+      elements.trainNumberInput.addEventListener("input", handleTrainDetailInput);
+      elements.carNumberInput.addEventListener("input", handleTrainDetailInput);
       elements.stationButtonGrid.addEventListener("click", handleChoiceClick);
       elements.codeButtonGrid.addEventListener("click", handleChoiceClick);
       elements.entriesViewTab.addEventListener("click", () => setLogView("entries"));
@@ -1209,10 +1265,14 @@
     function updateCustomVisibility() {
       const customStation = elements.stationInput.value === "CUSTOM" || elements.sectorInput.value === "CUSTOM";
       const customCode = elements.codeInput.value === "CUSTOM";
+      const trainRide = normalizeCode(getSelectedCode()) === "TR";
       elements.customStationLabel.hidden = !customStation;
       elements.customStationInput.required = customStation;
       elements.customCodeLabel.hidden = !customCode;
       elements.customCodeInput.required = customCode;
+      elements.trainDetails.hidden = !trainRide;
+      elements.trainNumberInput.required = trainRide;
+      elements.carNumberInput.required = trainRide;
       setChoiceButtonStates(elements.stationInput, elements.stationButtonGrid);
       setChoiceButtonStates(elements.codeInput, elements.codeButtonGrid);
     }
@@ -1223,7 +1283,9 @@
         station: elements.stationInput.value,
         customStation: elements.customStationInput.value.trim().toUpperCase(),
         code: elements.codeInput.value,
-        customCode: elements.customCodeInput.value.trim().toUpperCase()
+        customCode: elements.customCodeInput.value.trim().toUpperCase(),
+        trainNumber: cleanTrainNumber(elements.trainNumberInput.value),
+        carNumber: cleanCarNumber(elements.carNumberInput.value)
       };
       localStorage.setItem(FORM_STATE_KEY, JSON.stringify(state));
     }
@@ -1253,7 +1315,19 @@
         elements.customCodeInput.value = state.customCode;
       }
 
+      elements.trainNumberInput.value = cleanTrainNumber(state.trainNumber || "");
+      elements.carNumberInput.value = cleanCarNumber(state.carNumber || "");
       updateCustomVisibility();
+    }
+
+    function handleTrainDetailInput(event) {
+      if (event.target === elements.trainNumberInput) {
+        elements.trainNumberInput.value = cleanTrainNumber(elements.trainNumberInput.value);
+      }
+      if (event.target === elements.carNumberInput) {
+        elements.carNumberInput.value = cleanCarNumber(elements.carNumberInput.value);
+      }
+      saveFormState();
     }
 
     function handleChoiceClick(event) {
@@ -1289,7 +1363,8 @@
       event.preventDefault();
       const existingEntry = editingId ? entries.find(item => item.id === editingId) : null;
       const code = normalizeCode(getSelectedCode());
-      const time = cleanTime(elements.timeInput.value);
+      const time = editingId ? cleanTime(elements.timeInput.value) : formatTimeHHMM(new Date());
+      const trainDetails = getTrainDetails();
       const entry = {
         id: editingId || crypto.randomUUID(),
         date: existingEntry?.date || formatDateKey(new Date()),
@@ -1298,7 +1373,9 @@
         station: getSelectedStation(),
         type: typeForCode(code),
         code,
-        notes: defaultRemarkForCode(code)
+        notes: defaultRemarkForCode(code),
+        trainNumber: code === "TR" ? trainDetails.trainNumber : "",
+        carNumber: code === "TR" ? trainDetails.carNumber : ""
       };
 
       if (!entry.time || entry.time.length !== 4) {
@@ -1318,8 +1395,18 @@
       }
 
       if (!entry.station) {
-        showToast("Add a station or train/station value.");
+        showToast("Add a station value.");
         elements.customStationInput.focus();
+        return;
+      }
+
+      if (entry.code === "TR" && !validateTrainDetails(trainDetails)) {
+        showToast("Train needs 1-2 digits and car needs 4 digits.");
+        if (!/^\d{1,2}$/.test(trainDetails.trainNumber)) {
+          elements.trainNumberInput.focus();
+        } else {
+          elements.carNumberInput.focus();
+        }
         return;
       }
 
@@ -1350,6 +1437,16 @@
       }
 
       const code = normalizeCode(parsed.code);
+      const trainDetails = getTrainDetails();
+      if (code === "TR" && !validateTrainDetails(trainDetails)) {
+        setMode("manual");
+        elements.codeInput.value = "TR";
+        updateCustomVisibility();
+        showToast("Add train and car numbers for TR.");
+        elements.trainNumberInput.focus();
+        return;
+      }
+
       const entry = {
         id: crypto.randomUUID(),
         date: formatDateKey(new Date()),
@@ -1358,7 +1455,9 @@
         station: parsed.station,
         type: typeForCode(code),
         code,
-        notes: defaultRemarkForCode(code)
+        notes: defaultRemarkForCode(code),
+        trainNumber: code === "TR" ? trainDetails.trainNumber : "",
+        carNumber: code === "TR" ? trainDetails.carNumber : ""
       };
 
       entries.push(entry);
@@ -1405,6 +1504,17 @@
       return elements.codeInput.value;
     }
 
+    function getTrainDetails() {
+      return {
+        trainNumber: cleanTrainNumber(elements.trainNumberInput.value),
+        carNumber: cleanCarNumber(elements.carNumberInput.value)
+      };
+    }
+
+    function validateTrainDetails(details) {
+      return /^\d{1,2}$/.test(details.trainNumber) && /^\d{4}$/.test(details.carNumber);
+    }
+
     function getLastStation() {
       if (!entries.length) return "";
       return entries[entries.length - 1].station || "";
@@ -1413,10 +1523,13 @@
     function resetEntryForm(options = {}) {
       editingId = null;
       elements.entryForm.reset();
+      elements.timeFieldLabel.hidden = true;
       elements.timeInput.value = formatTimeHHMM(new Date());
       elements.sectorInput.value = "NORTH";
       populateStationPicker();
       elements.codeInput.value = "11-53";
+      elements.trainNumberInput.value = "";
+      elements.carNumberInput.value = "";
       updateCustomVisibility();
       saveFormState();
       setSaveButtonDefault();
@@ -1424,6 +1537,7 @@
 
     function prepareNextEntry() {
       editingId = null;
+      elements.timeFieldLabel.hidden = true;
       elements.timeInput.value = formatTimeHHMM(new Date());
       updateCustomVisibility();
       setSaveButtonDefault();
@@ -1456,6 +1570,7 @@
       if (!entry) return;
       setMode("manual");
       editingId = id;
+      elements.timeFieldLabel.hidden = false;
       elements.timeInput.value = entry.time || formatTimeHHMM(new Date());
       elements.sectorInput.value = Object.keys(SECTORS).includes(entry.location) ? entry.location : findSectorForStation(entry.station);
       populateStationPicker();
@@ -1471,6 +1586,8 @@
         elements.codeInput.value = "CUSTOM";
         elements.customCodeInput.value = entry.code || "";
       }
+      elements.trainNumberInput.value = cleanTrainNumber(entry.trainNumber || "");
+      elements.carNumberInput.value = cleanCarNumber(entry.carNumber || "");
       updateCustomVisibility();
       elements.saveButton.textContent = "Update Entry";
       elements.timeInput.focus();
@@ -1496,6 +1613,8 @@
         elements.customCodeInput.value = entry.code || "";
       }
 
+      elements.trainNumberInput.value = cleanTrainNumber(entry.trainNumber || "");
+      elements.carNumberInput.value = cleanCarNumber(entry.carNumber || "");
       updateCustomVisibility();
       saveFormState();
     }
@@ -1649,7 +1768,7 @@
         showToast("Add at least one entry before exporting CSV.");
         return;
       }
-      const columns = ["date", "time", "location", "station", "type", "code", "notes"];
+      const columns = ["date", "time", "location", "station", "type", "code", "train_car", "notes"];
       const csv = [
         columns.join(","),
         ...entries.map((entry, index) => {
@@ -1660,6 +1779,7 @@
             station: entry.station || "",
             type: typeForCode(entry.code),
             code: normalizeCode(entry.code),
+            train_car: formatTrainCarText(entry),
             notes: remarkForEntry(entry, index)
           };
           return columns.map(column => csvEscape(row[column] || "")).join(",");
@@ -1692,7 +1812,7 @@
               <td>${escapeHtml(printable.time)}</td>
               <td><div class="ew">E<br>W</div></td>
               <td>${escapeHtml(printable.station)}</td>
-              <td>${escapeHtml(printable.train)}</td>
+              <td>${printable.trainHtml}</td>
               <td>${printable.contacts}</td>
               <td>${printable.nonPayers}</td>
               <td>${printable.citations}</td>
@@ -1773,12 +1893,29 @@
       return {
         time: entry.time,
         station: entry.station,
-        train: code,
+        trainHtml: formatTrainCarForPrint(entry, code),
         contacts: "",
         nonPayers: "",
         citations: "",
         remarks: remarkForEntry(entry, index)
       };
+    }
+
+    function formatTrainCarForPrint(entry, code) {
+      if (code === "TR" && entry.trainNumber && entry.carNumber) {
+        return `
+          <span class="train-fraction">
+            <span class="train-fraction-top">${escapeHtml(entry.trainNumber)}</span>
+            <span class="train-fraction-bottom">${escapeHtml(entry.carNumber)}</span>
+          </span>`;
+      }
+      return escapeHtml(code);
+    }
+
+    function formatTrainCarText(entry) {
+      return normalizeCode(entry.code) === "TR" && entry.trainNumber && entry.carNumber
+        ? `${entry.trainNumber}/${entry.carNumber}`
+        : "";
     }
 
     function defaultRemarkForCode(code) {
@@ -1866,6 +2003,14 @@
     }
 
     function cleanTime(value) {
+      return String(value || "").replace(/\D/g, "").slice(0, 4);
+    }
+
+    function cleanTrainNumber(value) {
+      return String(value || "").replace(/\D/g, "").slice(0, 2);
+    }
+
+    function cleanCarNumber(value) {
       return String(value || "").replace(/\D/g, "").slice(0, 4);
     }
 
